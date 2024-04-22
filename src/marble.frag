@@ -66,4 +66,5 @@ vec4 getColorAtPosition(vec2 p) {
 void main() {
   vec2 uv = gl_FragCoord.xy / resolution;
   gl_FragColor = getColorAtPosition(uv);
+  // gl_FragColor = vec4(0.5, 0.3, 0.2, 0.6);
 }

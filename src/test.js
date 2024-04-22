@@ -52,7 +52,6 @@ const options = {
     "#F6D364",
   ],
 };
-
 options.color = options.colorPalette[0];
 options.operation = options.operationPalette[0];
 
@@ -90,7 +89,6 @@ canvas.width = 1024;
 canvas.height = 1024;
 
 let bounds = canvas.getBoundingClientRect();
-console.log(bounds);
 
 // Initialize the shader.
 const shader = createShader(gl, vertexSource, fragmentSource);
@@ -131,6 +129,7 @@ function shiftOperations() {
   // Cycle operations.
   const op = operations.pop();
   operations.unshift(op);
+  // console.log(operations);
 
   // Swap framebuffers.
   const previous = framebuffers[framebufferIndex];
@@ -192,20 +191,19 @@ function reset() {
   for (let i = 0; i < maxOperations; i++) {
     operations[i] = createOperation();
   }
+  console.log(operations);
 }
 
 /*
   Handle mousedown events.
 */
-canvas.addEventListener("mousedown", (e) => {
+canvas.addEventListener("mousedown", () => {
   if (event.button !== 0) {
     isMouseDown = false;
     return;
   }
-  console.log(e);
 
   const position = util.getPositionInBounds(bounds, mouse);
-  console.log(position);
 
   if (options.operation === "drop-small") {
     addDrop(position, util.randomInRange(0.025, 0.1));
@@ -251,8 +249,8 @@ document.addEventListener("mouseup", () => {
 });
 
 /*
-  Handle resize events.
-*/
+    Handle resize events.
+  */
 window.addEventListener("resize", () => {
   bounds = canvas.getBoundingClientRect();
 });
@@ -298,24 +296,5 @@ const engine = loop(() => {
   stats.end();
 });
 
-// Let's go!
 reset();
-const clickEvent = new MouseEvent("mousedown", {
-  screenX: 600,
-  screenY: 600,
-});
-mouse = [600, 600];
-canvas.dispatchEvent(clickEvent);
-setTimeout(() => {
-  mouse = [200, 200];
-  canvas.dispatchEvent(clickEvent);
-}, 2000);
-// mouse = [200, 200];
-
-const clickEvent2 = new MouseEvent("mouseup", {
-  screenX: 600,
-  screenY: 600,
-});
-canvas.dispatchEvent(clickEvent2);
-
 engine.start();
