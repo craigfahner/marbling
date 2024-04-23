@@ -11,6 +11,7 @@ import { vec2 } from "gl-matrix";
 import ControlKit from "controlkit";
 import Stats from "stats.js";
 import shuffle from "lodash.shuffle";
+import { getData, getDataFromLocalJson } from "./data.js";
 
 // Smoothing value for animating drops when they are created.
 const viscosity = 5;
@@ -298,6 +299,8 @@ const engine = loop(() => {
   stats.end();
 });
 
+const data = getDataFromLocalJson();
+console.log(data);
 // Let's go!
 reset();
 const clickEvent = new MouseEvent("mousedown", {

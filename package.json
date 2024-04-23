@@ -19,7 +19,9 @@
   "homepage": "https://github.com/nonphoto/marbled-paper",
   "dependencies": {
     "a-big-triangle": "^1.0.3",
+    "axios": "^1.6.8",
     "controlkit": "^0.1.9",
+    "fs": "^0.0.1-security",
     "gl-fbo": "^2.0.5",
     "gl-matrix": "2.7.1",
     "gl-shader": "4.2.1",
