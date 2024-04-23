@@ -13,6 +13,109 @@ import Stats from "stats.js";
 import shuffle from "lodash.shuffle";
 import { getData, getDataFromLocalJson } from "./data.js";
 
+// For storing the mouse coordinates.
+let mouse = vec2.create();
+
+// For storing whether the left mouse button is currently held down.
+let isMouseDown = false;
+
+// Operation data to send to the shader describing the most recently added operations
+let operations = [];
+
+// Initialize canvas and GL context.
+const canvas = document.querySelector("#render-canvas");
+const gl = util.getGLContext(canvas);
+
+canvas.width = 1024;
+canvas.height = 1024;
+
+let bounds = canvas.getBoundingClientRect();
+console.log(bounds);
+
+// Initialize the shader.
+const shader = createShader(gl, vertexSource, fragmentSource);
+shader.bind();
+shader.uniforms.operationCount = operations.length;
+shader.uniforms.resolution = [canvas.width, canvas.height];
+
+// Create some framebuffers. The active framebuffer's texture is sent to the shader to be used as a background.
+// Old operations that get pushed out of the operations array get drawn to the background so they don't disappear.
+const framebuffers = [
+  createFBO(gl, [canvas.width, canvas.height], { depth: false }),
+  createFBO(gl, [canvas.width, canvas.height], { depth: false }),
+];
+
+// Index of the active framebuffer.
+let framebufferIndex = 0;
+
+// An empty texture to replace the background for debugging.
+const emptyTexture = createTexture(gl, [canvas.width, canvas.height]);
+// Load the data from the local JSON file.
+// collect the data into a map
+const data = getDataFromLocalJson();
+const img_paths = new Map();
+data.forEach((obj) => {
+  if (!img_paths.has(obj.imageUrl)) {
+    img_paths.set(obj.imageUrl, []);
+  }
+  img_paths.get(obj.imageUrl).push(obj);
+});
+const img_urls = Array.from(img_paths.keys());
+console.log(img_urls);
+
+let affectColors = [
+  "rgb(157,246,76)",
+
+  "rgb(37,176,21)",
+
+  "rgb(116,249,251)",
+
+  "rgb(27,60,241)",
+
+  "rgb(114,20,241)",
+
+  "rgb(229,50,190)",
+
+  "rgb(233,51,35)",
+
+  "rgb(240,196,66)",
+];
+
+let affectColorsHex = [
+  "#9df64c",
+  "#25b015",
+  "#74f9fb",
+  "#1b3cf1",
+  "#7214f1",
+  "#e532be",
+  "#e93323",
+  "#f0c442",
+];
+
+var affectList = [
+  "hopeful",
+
+  "happy",
+
+  "fearful",
+
+  "bored",
+
+  "sad",
+
+  "disgusted",
+
+  "angry",
+
+  "interested",
+];
+
+const label_hex = new Map();
+
+for (let i = 0; i < affectList.length; i++) {
+  label_hex.set(affectList[i], affectColorsHex[i]);
+}
+
 // Smoothing value for animating drops when they are created.
 const viscosity = 5;
 
@@ -52,10 +155,12 @@ const options = {
     "#EA663D",
     "#F6D364",
   ],
+  imageURL: img_urls,
 };
 
 options.color = options.colorPalette[0];
 options.operation = options.operationPalette[0];
+options.image = options.imageURL[0];
 
 // Initialize the controls.
 const controls = new ControlKit();
@@ -69,48 +174,58 @@ panel.addColor(options, "color", {
   colorMode: "hex",
   presets: "colorPalette",
 });
+panel.addSelect(options, "imageURL", {
+  label: "ImageURL",
+  onChange: (value) => {
+    reset();
+    console.log(options.imageURL[value]);
+    const paths = img_paths.get(options.imageURL[value]);
+    // const url = options.image;
+    // const paths = img_paths.get(url);
+    // console.log(paths);
+    for (let i = 0; i < paths.length; i++) {
+      // draw each path
+      const path = paths[i];
+      console.log(path);
+      const intensity = path.intensity;
+      const interval = path.duration;
+      const color = label_hex.get(path.label);
+
+      const curve = path.path;
+      const end = curve[curve.length - 1];
+      const start = curve[0];
+
+      // console.log(end);
+
+      setTimeout(() => {
+        mouse = [end.x, end.y];
+        options.color = color;
+        const position = util.getPositionInBounds(bounds, mouse);
+        addDrop(position, 0.1 * intensity);
+        addComb(position, 0.1 * intensity);
+      }, 3000 * i);
+
+      // make the comb smooth
+      const slope = (end.y - start.y) / (end.x - start.x);
+      // start from the end point of the path
+      const samples = interval / 100;
+      for (let j = 0; j < samples; j++) {
+        const x = end.x + (start.x - end.x) * (j / samples);
+        const y = end.y + slope * (x - end.x);
+        setTimeout(() => {
+          mouse = [x, y];
+          const op = operations[0];
+          const position = util.getPositionInBounds(bounds, mouse);
+          op.end = position;
+        }, 3000 * i + 1000 + (interval * j) / 2000);
+      }
+    }
+  },
+});
 panel.addButton("reset", reset);
 panel.addButton("info", () => {
   window.location.href = "https://glitch.com/~marbled-paper";
 });
-
-// For storing the mouse coordinates.
-let mouse = vec2.create();
-
-// For storing whether the left mouse button is currently held down.
-let isMouseDown = false;
-
-// Operation data to send to the shader describing the most recently added operations
-let operations = [];
-
-// Initialize canvas and GL context.
-const canvas = document.querySelector("#render-canvas");
-const gl = util.getGLContext(canvas);
-
-canvas.width = 1024;
-canvas.height = 1024;
-
-let bounds = canvas.getBoundingClientRect();
-console.log(bounds);
-
-// Initialize the shader.
-const shader = createShader(gl, vertexSource, fragmentSource);
-shader.bind();
-shader.uniforms.operationCount = operations.length;
-shader.uniforms.resolution = [canvas.width, canvas.height];
-
-// Create some framebuffers. The active framebuffer's texture is sent to the shader to be used as a background.
-// Old operations that get pushed out of the operations array get drawn to the background so they don't disappear.
-const framebuffers = [
-  createFBO(gl, [canvas.width, canvas.height], { depth: false }),
-  createFBO(gl, [canvas.width, canvas.height], { depth: false }),
-];
-
-// Index of the active framebuffer.
-let framebufferIndex = 0;
-
-// An empty texture to replace the background for debugging.
-const emptyTexture = createTexture(gl, [canvas.width, canvas.height]);
 
 /*
   Create a new operation object.
@@ -181,7 +296,10 @@ function reset() {
   const palette = shuffle(options.colorPalette);
   options.color = palette[1];
 
-  gl.clearColor(...util.toFloatColor(palette[0]));
+  const images = shuffle(options.imageURL);
+  options.image = images[1];
+
+  gl.clearColor(...util.toFloatColor("#405b6e")); // fix the bg color
   gl.viewport(0, 0, canvas.width, canvas.height);
   gl.clear(gl.COLOR_BUFFER_BIT);
 
@@ -299,63 +417,53 @@ const engine = loop(() => {
   stats.end();
 });
 
-// Load the data from the local JSON file.
-// collect the data into a map
-const data = getDataFromLocalJson();
-const img_paths = new Map();
-data.forEach((obj) => {
-  if (!img_paths.has(obj.imageUrl)) {
-    img_paths.set(obj.imageUrl, []);
-  }
-  img_paths.get(obj.imageUrl).push(obj);
-});
-// console.log(img_paths);
-// data.
 // Let's go!
 reset();
 
 // hard code: visiualization for the iamgeUrl:
-const url =
-  "https://image-affect.s3.ca-central-1.amazonaws.com/lsw68fia4lku08bw3xm";
-const paths = img_paths.get(url);
-console.log(paths);
-for (let i = 0; i < paths.length; i++) {
-  // draw each path
-  const path = paths[i];
-  const intensity = path.intensity;
+// const url =
+//   "https://image-affect.s3.ca-central-1.amazonaws.com/lsw68fia4lku08bw3xm";
+// const paths = img_paths.get(url);
+// // const url = options.image;
+// // const paths = img_paths.get(url);
+// // console.log(paths);
+// for (let i = 0; i < paths.length; i++) {
+//   // draw each path
+//   const path = paths[i];
+//   console.log(path);
+//   const intensity = path.intensity;
+//   const interval = path.duration;
+//   const color = label_hex.get(path.label);
 
-  const curve = path.path;
-  const end = curve[curve.length - 1];
-  const start = curve[0];
+//   const curve = path.path;
+//   const end = curve[curve.length - 1];
+//   const start = curve[0];
 
-  console.log(end);
-  const mousedownEvent = new MouseEvent("mousedown", {
-    clientX: 600,
-    clientY: 600,
-  });
+//   // console.log(end);
 
-  const moousemoveEvent = new MouseEvent("mousemove", {
-    clientX: 600,
-    clientY: 600,
-  });
+//   setTimeout(() => {
+//     mouse = [end.x, end.y];
+//     options.color = color;
+//     const position = util.getPositionInBounds(bounds, mouse);
+//     addDrop(position, 0.1 * intensity);
+//     addComb(position, 0.1 * intensity);
+//   }, 3000 * i);
 
-  setTimeout(() => {
-    mouse = [end.x, end.y];
-    const position = util.getPositionInBounds(bounds, mouse);
-    addDrop(position, 0.1 * intensity);
-    addComb(position, 0.1 * intensity);
-    // mouse = [start.x, start.y];
-    // const op = operations[0];
-    // position = util.getPositionInBounds(bounds, mouse);
-    // op.end = position;
-  }, 1000 * i);
-  setTimeout(() => {
-    mouse = [start.x, start.y];
-    const op = operations[0];
-    const position = util.getPositionInBounds(bounds, mouse);
-    op.end = position;
-  }, 1000 * i + 500);
-}
+//   // make the comb smooth
+//   const slope = (end.y - start.y) / (end.x - start.x);
+//   // start from the end point of the path
+//   const samples = interval / 100;
+//   for (let j = 0; j < samples; j++) {
+//     const x = end.x + (start.x - end.x) * (j / samples);
+//     const y = end.y + slope * (x - end.x);
+//     setTimeout(() => {
+//       mouse = [x, y];
+//       const op = operations[0];
+//       const position = util.getPositionInBounds(bounds, mouse);
+//       op.end = position;
+//     }, 3000 * i + 1000 + (interval * j) / 2000);
+//   }
+// }
 
 // const clickEvent = new MouseEvent("mousedown", {
 //   screenX: 600,
