@@ -299,26 +299,80 @@ const engine = loop(() => {
   stats.end();
 });
 
+// Load the data from the local JSON file.
+// collect the data into a map
 const data = getDataFromLocalJson();
-console.log(data);
+const img_paths = new Map();
+data.forEach((obj) => {
+  if (!img_paths.has(obj.imageUrl)) {
+    img_paths.set(obj.imageUrl, []);
+  }
+  img_paths.get(obj.imageUrl).push(obj);
+});
+// console.log(img_paths);
+// data.
 // Let's go!
 reset();
-const clickEvent = new MouseEvent("mousedown", {
-  screenX: 600,
-  screenY: 600,
-});
-mouse = [600, 600];
-canvas.dispatchEvent(clickEvent);
-setTimeout(() => {
-  mouse = [200, 200];
-  canvas.dispatchEvent(clickEvent);
-}, 2000);
+
+// hard code: visiualization for the iamgeUrl:
+const url =
+  "https://image-affect.s3.ca-central-1.amazonaws.com/lsw68fia4lku08bw3xm";
+const paths = img_paths.get(url);
+console.log(paths);
+for (let i = 0; i < paths.length; i++) {
+  // draw each path
+  const path = paths[i];
+  const intensity = path.intensity;
+
+  const curve = path.path;
+  const end = curve[curve.length - 1];
+  const start = curve[0];
+
+  console.log(end);
+  const mousedownEvent = new MouseEvent("mousedown", {
+    clientX: 600,
+    clientY: 600,
+  });
+
+  const moousemoveEvent = new MouseEvent("mousemove", {
+    clientX: 600,
+    clientY: 600,
+  });
+
+  setTimeout(() => {
+    mouse = [end.x, end.y];
+    const position = util.getPositionInBounds(bounds, mouse);
+    addDrop(position, 0.1 * intensity);
+    addComb(position, 0.1 * intensity);
+    // mouse = [start.x, start.y];
+    // const op = operations[0];
+    // position = util.getPositionInBounds(bounds, mouse);
+    // op.end = position;
+  }, 1000 * i);
+  setTimeout(() => {
+    mouse = [start.x, start.y];
+    const op = operations[0];
+    const position = util.getPositionInBounds(bounds, mouse);
+    op.end = position;
+  }, 1000 * i + 500);
+}
+
+// const clickEvent = new MouseEvent("mousedown", {
+//   screenX: 600,
+//   screenY: 600,
+// });
+// mouse = [600, 600];
+// canvas.dispatchEvent(clickEvent);
+// setTimeout(() => {
+//   mouse = [500, 500];
+//   canvas.dispatchEvent(clickEvent);
+// }, 2000);
 // mouse = [200, 200];
 
-const clickEvent2 = new MouseEvent("mouseup", {
-  screenX: 600,
-  screenY: 600,
-});
-canvas.dispatchEvent(clickEvent2);
+// const clickEvent2 = new MouseEvent("mouseup", {
+//   screenX: 600,
+//   screenY: 600,
+// });
+// canvas.dispatchEvent(clickEvent2);
 
 engine.start();
