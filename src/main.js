@@ -30,7 +30,6 @@ canvas.width = 1024;
 canvas.height = 1024;
 
 let bounds = canvas.getBoundingClientRect();
-console.log(bounds);
 
 // Initialize the shader.
 const shader = createShader(gl, vertexSource, fragmentSource);
@@ -61,7 +60,7 @@ data.forEach((obj) => {
   img_paths.get(obj.imageUrl).push(obj);
 });
 const img_urls = Array.from(img_paths.keys());
-console.log(img_urls);
+// console.log(img_urls);
 
 let affectColors = [
   "rgb(157,246,76)",
@@ -162,6 +161,15 @@ options.color = options.colorPalette[0];
 options.operation = options.operationPalette[0];
 options.image = options.imageURL[0];
 
+function adjustOrdinates(point) {
+  const [x, y] = point;
+  const nx = (x * bounds.width) / 800;
+  const ny = (y * bounds.height) / 800;
+  const res = [nx + bounds.left, ny + bounds.top];
+  // console.log(res);
+  return res;
+}
+
 // Initialize the controls.
 const controls = new ControlKit();
 const panel = controls.addPanel({ width: 250 });
@@ -198,26 +206,30 @@ panel.addSelect(options, "imageURL", {
       // console.log(end);
 
       setTimeout(() => {
-        mouse = [end.x, end.y];
+        // mouse = [end.x, end.y];
+        mouse = adjustOrdinates([end.x, end.y]);
         options.color = color;
-        const position = util.getPositionInBounds(bounds, mouse);
+        let position = util.getPositionInBounds(bounds, mouse);
         addDrop(position, 0.1 * intensity);
+        mouse = adjustOrdinates([start.x, start.y]);
+        position = util.getPositionInBounds(bounds, mouse);
         addComb(position, 0.1 * intensity);
       }, 3000 * i);
 
       // make the comb smooth
       const slope = (end.y - start.y) / (end.x - start.x);
-      // start from the end point of the path
+      // start from the start point of the path
       const samples = interval / 100;
       for (let j = 0; j < samples; j++) {
-        const x = end.x + (start.x - end.x) * (j / samples);
-        const y = end.y + slope * (x - end.x);
+        const x = start.x + (end.x - start.x) * (j / samples);
+        const y = start.y + slope * (x - start.x);
         setTimeout(() => {
-          mouse = [x, y];
+          // mouse = [x, y];
+          mouse = adjustOrdinates([x, y]);
           const op = operations[0];
           const position = util.getPositionInBounds(bounds, mouse);
           op.end = position;
-        }, 3000 * i + 1000 + (interval * j) / 2000);
+        }, 3000 * i + 500 + (2400 / interval) * j);
       }
     }
   },
@@ -321,10 +333,10 @@ canvas.addEventListener("mousedown", (e) => {
     isMouseDown = false;
     return;
   }
-  console.log(e);
+  // console.log(e);
 
   const position = util.getPositionInBounds(bounds, mouse);
-  console.log(position);
+  // console.log(position);
 
   if (options.operation === "drop-small") {
     addDrop(position, util.randomInRange(0.025, 0.1));

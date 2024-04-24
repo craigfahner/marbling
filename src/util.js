@@ -14,6 +14,7 @@ export function getGLContext(canvas) {
 }
 
 export function getPositionInBounds(bounds, position) {
+  // console.log(bounds);
   // console.log(position);
   const [x, y] = position;
   const nx = (x - bounds.left) / bounds.width;
