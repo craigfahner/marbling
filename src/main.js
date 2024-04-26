@@ -311,7 +311,7 @@ function reset() {
   const images = shuffle(options.imageURL);
   options.image = images[1];
 
-  gl.clearColor(...util.toFloatColor("#405b6e")); // fix the bg color
+  gl.clearColor(...util.toFloatColor("#000000")); // fix the bg color to be black
   gl.viewport(0, 0, canvas.width, canvas.height);
   gl.clear(gl.COLOR_BUFFER_BIT);
 
