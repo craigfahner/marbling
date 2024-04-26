@@ -155,11 +155,13 @@ const options = {
     "#F6D364",
   ],
   imageURL: img_urls,
+  // combFrequency: 1,
 };
 
 options.color = options.colorPalette[0];
 options.operation = options.operationPalette[0];
 options.image = options.imageURL[0];
+options.combObj = { combFreq: 0.5, range: [0, 1] };
 
 function adjustOrdinates(point) {
   const [x, y] = point;
@@ -169,7 +171,6 @@ function adjustOrdinates(point) {
   // console.log(res);
   return res;
 }
-
 // Initialize the controls.
 const controls = new ControlKit();
 const panel = controls.addPanel({ width: 250 });
@@ -182,6 +183,10 @@ panel.addColor(options, "color", {
   colorMode: "hex",
   presets: "colorPalette",
 });
+// panel.addNumberInput(options, "combFreq", {
+//   label: "CombFreq",
+// });
+panel.addSlider(options.combObj, "combFreq", "range");
 panel.addSelect(options, "imageURL", {
   label: "ImageURL",
   onChange: (value) => {
@@ -213,7 +218,7 @@ panel.addSelect(options, "imageURL", {
         addDrop(position, 0.1 * intensity);
         mouse = adjustOrdinates([start.x, start.y]);
         position = util.getPositionInBounds(bounds, mouse);
-        addComb(position, 0.1 * intensity);
+        addComb(position, options.combObj.combFreq);
       }, 3000 * i);
 
       // make the comb smooth
