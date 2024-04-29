@@ -161,7 +161,7 @@ const options = {
 options.color = options.colorPalette[0];
 options.operation = options.operationPalette[0];
 options.image = options.imageURL[0];
-options.combObj = { combFreq: 0.5, range: [0, 1] };
+options.combObj = { combFreq: 0.5, combScale: 0.5, range: [0, 1] };
 
 function adjustOrdinates(point) {
   const [x, y] = point;
@@ -187,6 +187,7 @@ panel.addColor(options, "color", {
 //   label: "CombFreq",
 // });
 panel.addSlider(options.combObj, "combFreq", "range");
+panel.addSlider(options.combObj, "combScale", "range");
 panel.addSelect(options, "imageURL", {
   label: "ImageURL",
   onChange: (value) => {
@@ -223,10 +224,13 @@ panel.addSelect(options, "imageURL", {
 
       // make the comb smooth
       const slope = (end.y - start.y) / (end.x - start.x);
+      const temp_end_x =
+        options.combObj.combScale * (end.x - start.x) + start.x;
+      // const temp_end_y = slope * (temp_end_x - start.x) + start.y;
       // start from the start point of the path
       const samples = interval / 100;
       for (let j = 0; j < samples; j++) {
-        const x = start.x + (end.x - start.x) * (j / samples);
+        const x = start.x + (temp_end_x - start.x) * (j / samples);
         const y = start.y + slope * (x - start.x);
         setTimeout(() => {
           // mouse = [x, y];
