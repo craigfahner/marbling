@@ -183,9 +183,7 @@ panel.addColor(options, "color", {
   colorMode: "hex",
   presets: "colorPalette",
 });
-// panel.addNumberInput(options, "combFreq", {
-//   label: "CombFreq",
-// });
+
 panel.addSlider(options.combObj, "combFreq", "range");
 panel.addSlider(options.combObj, "combScale", "range");
 panel.addSelect(options, "imageURL", {
@@ -197,6 +195,7 @@ panel.addSelect(options, "imageURL", {
     // const url = options.image;
     // const paths = img_paths.get(url);
     // console.log(paths);
+    let timeout = 0;
     for (let i = 0; i < paths.length; i++) {
       // draw each path
       const path = paths[i];
@@ -206,40 +205,67 @@ panel.addSelect(options, "imageURL", {
       const color = label_hex.get(path.label);
 
       const curve = path.path;
-      const end = curve[curve.length - 1];
       const start = curve[0];
 
-      // console.log(end);
-
+      // addDrop at the first point
+      // addComb at the first point
       setTimeout(() => {
-        // mouse = [end.x, end.y];
-        mouse = adjustOrdinates([end.x, end.y]);
+        mouse = adjustOrdinates([start.x, start.y]);
         options.color = color;
         let position = util.getPositionInBounds(bounds, mouse);
         addDrop(position, 0.1 * intensity);
-        mouse = adjustOrdinates([start.x, start.y]);
-        position = util.getPositionInBounds(bounds, mouse);
-        addComb(position, options.combObj.combFreq);
-      }, 3000 * i);
+        // position = util.getPositionInBounds(bounds, mouse);
+        // addComb(position, options.combObj.combFreq);
+      }, timeout);
 
-      // make the comb smooth
-      const slope = (end.y - start.y) / (end.x - start.x);
-      const temp_end_x =
-        options.combObj.combScale * (end.x - start.x) + start.x;
-      // const temp_end_y = slope * (temp_end_x - start.x) + start.y;
-      // start from the start point of the path
-      const samples = interval / 100;
-      for (let j = 0; j < samples; j++) {
-        const x = start.x + (temp_end_x - start.x) * (j / samples);
-        const y = start.y + slope * (x - start.x);
+      for (let j = 1; j < curve.length; j++) {
+        const prev = curve[j - 1];
+        const cur = curve[j];
+        timeout += 1;
         setTimeout(() => {
-          // mouse = [x, y];
-          mouse = adjustOrdinates([x, y]);
+          mouse = adjustOrdinates([prev.x, prev.y]);
+          let position = util.getPositionInBounds(bounds, mouse);
+          addComb(position, options.combObj.combFreq);
+          mouse = adjustOrdinates([cur.x, cur.y]);
           const op = operations[0];
-          const position = util.getPositionInBounds(bounds, mouse);
+          position = util.getPositionInBounds(bounds, mouse);
           op.end = position;
-        }, 3000 * i + 500 + (2400 / interval) * j);
+        }, timeout);
       }
+
+      // const end = curve[curve.length - 1];
+
+      // // console.log(end);
+
+      // setTimeout(() => {
+      //   // mouse = [end.x, end.y];
+      //   mouse = adjustOrdinates([end.x, end.y]);
+      //   options.color = color;
+      //   let position = util.getPositionInBounds(bounds, mouse);
+      //   addDrop(position, 0.1 * intensity);
+      //   mouse = adjustOrdinates([start.x, start.y]);
+      //   position = util.getPositionInBounds(bounds, mouse);
+      //   addComb(position, options.combObj.combFreq);
+      // }, 3000 * i);
+
+      // // make the comb smooth
+      // const slope = (end.y - start.y) / (end.x - start.x);
+      // const temp_end_x =
+      //   options.combObj.combScale * (end.x - start.x) + start.x;
+      // // const temp_end_y = slope * (temp_end_x - start.x) + start.y;
+      // // start from the start point of the path
+      // const samples = interval / 100;
+      // for (let j = 0; j < samples; j++) {
+      //   const x = start.x + (temp_end_x - start.x) * (j / samples);
+      //   const y = start.y + slope * (x - start.x);
+      //   setTimeout(() => {
+      //     // mouse = [x, y];
+      //     mouse = adjustOrdinates([x, y]);
+      //     const op = operations[0];
+      //     const position = util.getPositionInBounds(bounds, mouse);
+      //     op.end = position;
+      //   }, 3000 * i + 500 + (2400 / interval) * j);
+      // }
     }
   },
 });
