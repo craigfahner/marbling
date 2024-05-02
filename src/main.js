@@ -380,7 +380,7 @@ canvas.addEventListener("mousedown", (e) => {
   } else if (options.operation === "comb-small") {
     addComb(position, util.randomInRange(0.1, 0.3));
   } else if (options.operation === "comb-large") {
-    addComb(position, util.randomInRange(0.3, 0.6));
+    addComb(position, util.randomInRange(3, 6));
   } else if (options.operation === "smudge") {
     addComb(position, 0);
   }
