@@ -4,8 +4,8 @@
   "description": "",
   "main": "src/main.js",
   "scripts": {
-    "build": "NODE_ENV=production parcel -p $PORT -d build index.html",
-    "start": "parcel serve -p $PORT -d build index.html"
+    "prestart": "parcel build index.html --out-dir dist1",
+    "start": "node server.js"
   },
   "repository": {
     "type": "git",
@@ -21,6 +21,7 @@
     "a-big-triangle": "^1.0.3",
     "axios": "^1.6.8",
     "controlkit": "^0.1.9",
+    "express": "^4.19.2",
     "fs": "^0.0.1-security",
     "gl-fbo": "^2.0.5",
     "gl-matrix": "2.7.1",
