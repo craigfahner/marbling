@@ -162,6 +162,8 @@ options.color = options.colorPalette[0];
 options.operation = options.operationPalette[0];
 options.image = options.imageURL[0];
 options.combObj = { combFreq: 0.5, combScale: 0.5, range: [0, 1] };
+options.dropScale = { dropScale: 0.1, range: [0, 0.5] };
+options.pathSoomthness = { pathSoomthness: 100, range: [1, 1000] };
 
 function adjustOrdinates(point) {
   const [x, y] = point;
@@ -186,6 +188,8 @@ panel.addColor(options, "color", {
 
 panel.addSlider(options.combObj, "combFreq", "range");
 panel.addSlider(options.combObj, "combScale", "range");
+panel.addSlider(options.dropScale, "dropScale", "range");
+panel.addSlider(options.pathSoomthness, "pathSoomthness", "range");
 panel.addSelect(options, "imageURL", {
   label: "ImageURL",
   onChange: (value) => {
@@ -213,7 +217,7 @@ panel.addSelect(options, "imageURL", {
         mouse = adjustOrdinates([start.x, start.y]);
         options.color = color;
         let position = util.getPositionInBounds(bounds, mouse);
-        addDrop(position, 0.1 * intensity);
+        addDrop(position, options.dropScale.dropScale * intensity);
         // position = util.getPositionInBounds(bounds, mouse);
         // addComb(position, options.combObj.combFreq);
       }, timeout);
@@ -221,7 +225,7 @@ panel.addSelect(options, "imageURL", {
       for (let j = 1; j < curve.length; j++) {
         const prev = curve[j - 1];
         const cur = curve[j];
-        timeout += 1;
+        timeout += options.pathSoomthness.pathSoomthness;
         setTimeout(() => {
           mouse = adjustOrdinates([prev.x, prev.y]);
           let position = util.getPositionInBounds(bounds, mouse);
